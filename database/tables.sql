@@ -1,75 +1,88 @@
-CREATE DATABASE AnalisisVentas;
+CREATE DATABASE SistemaAnalisisDeVentas; 
+
+USE SistemaAnalisisDeVentas; 
 GO
 
-USE AnalisisVentas;
-GO
+CREATE TABLE Country(
+    CountryID INT IDENTITY(1,1) PRIMARY KEY,
+    CountryName VARCHAR(100) NOT NULL UNIQUE
+);
 
-CREATE TABLE Categories (
+CREATE TABLE City(
+    CityID INT IDENTITY(1,1) PRIMARY KEY,
+    CityName VARCHAR(100) NOT NULL,
+    CountryID INT NOT NULL,
+
+    CONSTRAINT FK_City_Country
+    FOREIGN KEY (CountryID)
+    REFERENCES Country(CountryID)
+);
+
+CREATE TABLE Category(
     CategoryID INT IDENTITY(1,1) PRIMARY KEY,
-    CategoryName NVARCHAR(100) NOT NULL
+    CategoryName VARCHAR(100) NOT NULL UNIQUE
 );
-GO
 
-
-CREATE TABLE OrderStatus (
-    StatusID INT IDENTITY(1,1) PRIMARY KEY,
-    StatusName NVARCHAR(50) NOT NULL
-);
-GO
-
-
-CREATE TABLE Customers (
-    CustomerID INT IDENTITY(1,1) PRIMARY KEY,
-    FirstName NVARCHAR(100) NOT NULL,
-    LastName NVARCHAR(100) NOT NULL,
-    Email NVARCHAR(150) NOT NULL,
-    Phone NVARCHAR(50),
-    City NVARCHAR(100),
-    Country NVARCHAR(100)
-);
-GO
-
-
-CREATE TABLE Products (
-    ProductID INT IDENTITY(1,1) PRIMARY KEY,
-    ProductName NVARCHAR(150) NOT NULL,
-    Price DECIMAL(12,2) NOT NULL,
-    Stock INT NOT NULL,
+CREATE TABLE Product(
+    ProductID INT PRIMARY KEY,
+    ProductName VARCHAR(150) NOT NULL,
+    Price DECIMAL(10,2) NOT NULL CHECK (Price >= 0),
+    Stock INT NOT NULL CHECK (Stock >= 0),
     CategoryID INT NOT NULL,
-    CONSTRAINT FK_Products_Categories
-        FOREIGN KEY (CategoryID)
-        REFERENCES Categories(CategoryID)
+
+    CONSTRAINT FK_Product_Category
+    FOREIGN KEY (CategoryID)
+    REFERENCES Category(CategoryID)
 );
-GO
 
+CREATE TABLE Customer(
+    CustomerID INT PRIMARY KEY,
+    FirstName VARCHAR(100) NOT NULL,
+    LastName VARCHAR(100) NOT NULL,
+    Email VARCHAR(150) UNIQUE,
+    Phone VARCHAR(50),
+    CityID INT NOT NULL,
 
-CREATE TABLE Orders (
-    OrderID INT IDENTITY(1,1) PRIMARY KEY,
+    CONSTRAINT FK_Customer_City
+    FOREIGN KEY (CityID)
+    REFERENCES City(CityID)
+);
+
+CREATE TABLE OrderStatus(
+    StatusID INT IDENTITY(1,1) PRIMARY KEY,
+    StatusName VARCHAR(50) NOT NULL UNIQUE
+);
+
+CREATE TABLE [Order](
+    OrderID INT PRIMARY KEY,
     OrderDate DATE NOT NULL,
-    CustomerID INT NOT NULL,
     StatusID INT NOT NULL,
-    CONSTRAINT FK_Orders_Customers
-        FOREIGN KEY (CustomerID)
-        REFERENCES Customers(CustomerID),
-    CONSTRAINT FK_Orders_OrderStatus
-        FOREIGN KEY (StatusID)
-        REFERENCES OrderStatus(StatusID)
+    CustomerID INT NOT NULL,
+
+    CONSTRAINT FK_Order_Status
+    FOREIGN KEY (StatusID)
+    REFERENCES OrderStatus(StatusID),
+
+    CONSTRAINT FK_Order_Customer
+    FOREIGN KEY (CustomerID)
+    REFERENCES Customer(CustomerID)
 );
-GO
 
-
-CREATE TABLE OrderDetails (
-    OrderDetailID INT IDENTITY(1,1) PRIMARY KEY,
+CREATE TABLE OrderDetail(
     OrderID INT NOT NULL,
     ProductID INT NOT NULL,
-    Quantity INT NOT NULL,
-    TotalPrice DECIMAL(14,2) NOT NULL,
-    CONSTRAINT FK_OrderDetails_Orders
-        FOREIGN KEY (OrderID)
-        REFERENCES Orders(OrderID)
-        ON DELETE CASCADE,
-    CONSTRAINT FK_OrderDetails_Products
-        FOREIGN KEY (ProductID)
-        REFERENCES Products(ProductID)
+    Quantity INT NOT NULL CHECK (Quantity > 0),
+    UnitPrice DECIMAL(10,2) NOT NULL CHECK (UnitPrice >= 0),
+    TotalPrice DECIMAL(10,2) NOT NULL,
+
+    CONSTRAINT PK_OrderDetail
+    PRIMARY KEY (OrderID, ProductID),
+
+    CONSTRAINT FK_OrderDetail_Order
+    FOREIGN KEY (OrderID)
+    REFERENCES [Order](OrderID),
+
+    CONSTRAINT FK_OrderDetail_Product
+    FOREIGN KEY (ProductID)
+    REFERENCES Product(ProductID)
 );
-GO
